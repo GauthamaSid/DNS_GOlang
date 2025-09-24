@@ -229,7 +229,7 @@ func main() {
 		}
 	}()
 
-	// Start TCP server (important for larger responses and zone transfers, though not fully implemented here)
+	// Start TCP server 
 	tcpServer := &dns.Server{Addr: addr, Net: "tcp", Handler: handler}
 	log.Printf("Listening on TCP %s\n", addr)
 	if err := tcpServer.ListenAndServe(); err != nil {
