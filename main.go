@@ -23,7 +23,7 @@ const redisCacheTTL = 5 * time.Minute
 // Default upstream DNS server
 const defaultUpstreamDNSServer = "8.8.8.8:53"
 
-// Predefined static DNS records for demonstration purposes
+// Predefined static DNS records for test
 var staticRecords = map[string]map[uint16][]string{
 	"example.com.": {
 		dns.TypeA:    {"93.184.216.34"},
@@ -166,8 +166,6 @@ func (h *DNSServerHandler) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
 	w.WriteMsg(m)
 }
 
-// addRecordsToMsg adds the given records to the DNS message's Answer section.
-// This function parses the string representations of records and converts them to dns.RR.
 func (h *DNSServerHandler) addRecordsToMsg(m *dns.Msg, q dns.Question, records []string, class uint16, ttl uint32, authoritative bool) {
 	m.Authoritative = authoritative
 	for _, recStr := range records {
@@ -176,26 +174,19 @@ func (h *DNSServerHandler) addRecordsToMsg(m *dns.Msg, q dns.Question, records [
 			log.Printf("Error parsing record string '%s': %v\n", recStr, err)
 			continue
 		}
-		// Ensure the record name matches the query name, or is a CNAME target
-		// and the type matches or is a CNAME
-		if rr.Header().Name == q.Name || q.Qtype == dns.TypeCNAME || rr.Header().Rrtype == dns.TypeCNAME {
+	if rr.Header().Name == q.Name || q.Qtype == dns.TypeCNAME || rr.Header().Rrtype == dns.TypeCNAME {
 			rr.Header().Ttl = ttl // Override TTL for static/cached records if desired
 			m.Answer = append(m.Answer, rr)
 		} else {
 			log.Printf("Skipping record '%s' as it does not match query %s (Type %s)\n", recStr, q.Name, dns.Type(q.Qtype).String())
 		}
 	}
-	// If a CNAME was found and the query wasn't specifically for CNAME,
-	// we might need to follow it. For this example, we just return the CNAME.
-	// A more advanced resolver would then query for the A/AAAA of the CNAME target.
-	if q.Qtype != dns.TypeCNAME {
+if q.Qtype != dns.TypeCNAME {
 		// Check if the answer contains a CNAME for the queried name
 		for _, ans := range m.Answer {
 			if cname, ok := ans.(*dns.CNAME); ok && cname.Hdr.Name == q.Name {
 				log.Printf("CNAME for %s found: %s. A more advanced resolver would now follow this.", q.Name, cname.Target)
-				// A real resolver would now initiate a new query for cname.Target and the original q.Qtype
-				// For this example, we'll just return the CNAME.
-				break
+			break
 			}
 		}
 	}
